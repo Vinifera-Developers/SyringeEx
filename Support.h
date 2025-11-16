@@ -31,6 +31,7 @@ inline auto get_command_line(std::string_view arguments) {
 	try {
 		argument_set ret;
 
+#if 0
 		auto const end_flags = arguments.find('"');
 		ret.flags = trim(arguments.substr(0, end_flags));
 		if(end_flags != std::string_view::npos) {
@@ -46,6 +47,13 @@ inline auto get_command_line(std::string_view arguments) {
 				return ret;
 			}
 		}
+#endif
+
+		ret.flags = "-i=Vinifera.dll";
+		ret.executable = "game.exe";
+		ret.arguments = trim(arguments);
+		return ret;
+
 	} catch(...) {
 		// swallow everything, throw new one
 	}
