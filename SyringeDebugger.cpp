@@ -434,6 +434,15 @@ DWORD SyringeDebugger::HandleException(DEBUG_EVENT const& dbgEvent)
 	return DBG_CONTINUE;
 }
 
+bool ProcessStillAlive(DWORD pid)
+{
+	HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, pid);
+	if (!h) return false;
+	DWORD result = WaitForSingleObject(h, 0);
+	CloseHandle(h);
+	return result == WAIT_TIMEOUT; // still running
+}
+
 void SyringeDebugger::Run(std::string_view const arguments)
 {
 	constexpr auto AllocDataSize = sizeof(AllocData);
@@ -500,7 +509,12 @@ void SyringeDebugger::Run(std::string_view const arguments)
 
 	for(;;)
 	{
-		WaitForDebugEvent(&dbgEvent, INFINITE);
+		if (!WaitForDebugEvent(&dbgEvent, 1000)) { // 1s timeout
+			if (!ProcessStillAlive(pInfo.dwProcessId)) {
+				break; // exit debugger loop
+			}
+			continue;
+		}
 
 		DWORD continueStatus = DBG_CONTINUE;
 		bool wasBP = false;
